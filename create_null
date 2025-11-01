@@ -1,0 +1,44 @@
+##Creates a null node after all selected nodes and pipes it into the network accordingly
+
+node = hou.pwd()
+
+#iterate through all selected nodes
+for i in hou.selectedNodes():
+    if hou.nodeTypeCategories().keys():
+### Above function lets you call this function on any context ###      
+
+### get output connections 
+        parent_ocs=i.outputConnections()       
+###set new node params
+        dir = i.parent().path() + "/"
+        selNodeName = i.name()
+        nodeinfo = i.type().name()
+        otherName = hou.ui.readInput("Create Null Node for %s"%selNodeName, buttons=( "OK", "CANCEL"), initial_contents ="OUT")
+        if otherName[0]==1:
+            break;
+        otherName = otherName[1].upper().replace(" ", "_");
+       
+        #create new null
+        nullNode = hou.node("/%s"%dir).createNode("null", otherName)
+        #set color
+        nullNode.setColor(hou.Color( [0,0.3,0]))
+        #setting Node position
+        selNodePos = i.position()
+        nullNode.setPosition(hou.Vector2(selNodePos[0], selNodePos[1]-1))
+        #set input to original node
+        nullNode.setInput(0, i)
+        #set new node as selected
+        i.setSelected(False)
+        nullNode.setSelected(True)
+       
+        #connect output connections to new node
+        for oc in parent_ocs:
+            idx = oc.inputIndex()
+            if oc.inputItem().name()==i.name():
+                oc.outputItem().setInput(idx, nullNode, 0)
+
+                
+        
+
+                
+        
