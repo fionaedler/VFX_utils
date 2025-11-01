@@ -1,0 +1,8 @@
+'''
+Toggles between auto and manual mode. The script can be linked to a keyboard shortcut
+'''
+
+if hou.updateModeSetting() == hou.updateMode.Manual:
+    hou.setUpdateMode(hou.updateMode.AutoUpdate)
+else: 
+    hou.setUpdateMode(hou.updateMode.Manual)
