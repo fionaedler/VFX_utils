@@ -1,0 +1,43 @@
+'''
+  Lets you copy all custom AOVs of a mantra node to all other selected mantra nodes.
+'''
+
+import os
+nodes = hou.selectedNodes()
+
+# Filter function to return only mantra nodes
+def isMantra(node):
+    type = node.type().name()
+    return type == "ifd"
+    
+# User to pick node to copy AOVs from
+initial_node = nodes[0].parent()
+copy_node_path = hou.ui.selectNode(title="Please select node to copy AOVs from", initial_node=initial_node, height=400, custom_node_filter_callback=isMantra)
+
+
+if(copy_node_path is not None):
+    copy_node = hou.node(copy_node_path)
+
+
+    # Iterate ver AOVs in copy_node and save as dict
+    num_planes = copy_node.parm("vm_numaux").eval()
+    new_planes = {}
+    for i in range(num_planes):
+        k = copy_node.parm(f"vm_variable_plane{i+1}").eval()
+        v = copy_node.parm(f"vm_channel_plane{i+1}").eval()
+        new_planes[k] = v
+        
+        
+    # Append AOVs saved in dict to all selected nodes if they don't exist
+    for node in nodes:
+        type = node.type().name()
+        if(type == "ifd"):
+            for (k,v) in new_planes.items():
+                numaux = node.parm("vm_numaux").eval()
+                plane_list = [ node.parm(f"vm_variable_plane{i+1}").eval() for i in range(numaux)]
+                
+                if(k not in plane_list):
+                    node.parm("vm_numaux").set(numaux+1)
+                    node.parm(f"vm_variable_plane{numaux+1}").set(k)
+                    node.parm(f"vm_channel_plane{numaux+1}").set(v)
+                    print(f"Adding Channel: {k} | {v}")
