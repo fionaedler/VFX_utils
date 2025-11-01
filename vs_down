@@ -4,7 +4,10 @@ import nuke
 #Get current Node
 node=nuke.thisNode()
 
-
+###CUSTOM###
+# Set start folder and get list of subfolders
+start_folder = f"[PATH_TO_PROJ]/{shot}/[SUBFOLDER_STRUCTURE]"
+dir_list = os.listdir (start_folder)
 
 
 ## FUNCTIONS
