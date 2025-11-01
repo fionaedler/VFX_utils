@@ -1,0 +1,37 @@
+def insert_knobs_after(node, after_knob_name, knobs_to_insert):
+    knobs = node.allKnobs()
+
+    knob_found = False
+    removed_knobs = []
+
+    # Iterate over all knobs to find the knob to insert after
+    for knob in knobs:
+        if knob_found:
+            # Remove all knobs after after_knob_name and add to list of removed knobs
+            node.removeKnob(knob)
+            removed_knobs.append(knob)
+        else:
+            if knob.name() == after_knob_name:
+                knob_found=True
+
+    knobs_list = [i.name() for i in knobs]
+
+    # Check if knobs in knobs_to_insert exist. Otherwise add them
+    for knob in knobs_to_insert:
+        if knob.name() not in knobs_list:
+            node.addKnob(knob)
+
+    # Add back previously removed knobs
+    for knob in removed_knobs:
+        node.addKnob(knob)
+
+#
+# # Edit what knobs to add here:
+# string = nuke.String_Knob("sn", "Scene Name Extension")
+# knobs_to_add = [string]
+# # Edit after which knob to add new ones:
+# after_knob = "shot"
+#
+# nodes = nuke.selectedNodes()
+# for node in nodes:
+#     insert_knobs_after(node, after_knob, knobs_to_add)
