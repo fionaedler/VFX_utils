@@ -5,28 +5,29 @@ If a selected node is not a null one is created first and inserted into the netw
 
 def createNull():
     node = hou.pwd()
-
-    for i in hou.selectedNodes():
-        if hou.nodeTypeCategories().keys():
     
-### Above function lets you call this function on any context ###      
+    ### lets you call this function on any context ###     
+    for i in hou.selectedNodes():
+        if hou.nodeTypeCategories().keys():     
 
-### get outputs   
 
-            parent_ocs=i.outputConnections()
-        
-###set new node params
+            ### get outputs   
+            parent_ocs=i.outputConnections()       
+            ###set new node params
             dir = i.parent().path() + "/"
             selNodeName = i.name()
             nodeinfo = i.type().name()
-            otherName = hou.ui.readInput("Set Name", buttons=( "OK", "CANCEL"), initial_contents ="OUT")
+            
+            init_content="OUT"
+            #init_content="OUT_%s"%selNodeName
+            otherName = hou.ui.readInput("Create Null Node for %s"%selNodeName, buttons=( "OK", "CANCEL"), initial_contents =init_content)
             if otherName[0]==1:
                 break;
             otherName = otherName[1].upper().replace(" ", "_");
         
             #create new null
             nullNode = hou.node("/%s"%dir).createNode("null", otherName)
-            nullNode.setColor(hou.Color( [0,0,0]))
+            nullNode.setColor(hou.Color( [0,0.3,0]))
     
             #setting Node position
             selNodePos = i.position()
@@ -40,27 +41,27 @@ def createNull():
                 if oc.inputItem().name()==i.name():
                     oc.outputItem().setInput(idx, nullNode, 0)
 
-            return nullNode
-            
-
-                    
+            return nullNode 
+    
                     
 #################################################                   
-                    
+                   
 for node in hou.selectedNodes():
-    #node = createNull()
+    nodeType = node.type().name()
+    if(nodeType != "null"):
+        node = createNull()
+
+        
     newName = "om_"+ node.name().upper()
-    selNodePos = node.position()
-    #nodeInfo=node.type().name()
-    #print(nodeInfo)
-    
+    selNodePos = node.position()    
     parentDir = node.parent().path() + "/"
     nodeDir = "../%s"%node
-    #newNode = hou.node("/%s"%parentDir).createNode("null", newName)
     newNode = hou.node("/%s"%parentDir).createNode("object_merge", newName)
     
-    newNode.setPosition(hou.Vector2(selNodePos[0]+1.5,selNodePos[1]-1))
+    newNode.setPosition(hou.Vector2(selNodePos[0]+1.5,selNodePos[1]-1))  
+    newNode.parm("objpath1").set("../%s"%node)        
+    newNode.setUserData("nodeshape", "chevron_down")
+    newNode.setColor(hou.Color( [0,0,0.4]))
+    
     node.setSelected(False)
     newNode.setSelected(True)
-    
-    newNode.parm("objpath1").set("../%s"%node)              
