@@ -1,0 +1,99 @@
+'''
+Saves out all parameters of a selected node into a json file. This can be used to save presets and later load back onto a selected node.
+'''
+
+
+import os 
+import json
+
+try:
+    initial_node = hou.selectedNodes()[0]
+except:
+    initial_node = None
+
+path = hou.ui.selectNode(title="Please select Node to save out", initial_node=initial_node, height=800)
+
+if path != None:
+    
+    node = hou.node(path)
+    parms = node.parms()
+    
+    dict={}
+    message = ""
+    
+    for parm in parms:
+        # Get parameter type
+        p = parm.parmTemplate()
+        type = str(p.type()).split(".")[1]
+        
+        # Skip folders
+        if type == "FolderSet":
+            continue
+        
+        # Get parameter name
+        name = parm.name()
+        
+        # Skip Null default parameters
+        if name == "copyinput":
+            continue
+        if name == "cacheinput":
+            continue
+        # Skip parameters that have an expression
+        try:
+            exl = parm.expressionLanguage()
+            expr = 1
+            skip = 1
+        except:
+            skip = 0
+            expr = 0
+        # if skip:
+        #     continue
+            
+        # Get parameter values
+        val = parm.eval()
+        if expr:
+            val = parm.rawValue()
+        
+        label = parm.description()
+        
+        # Set values in dictionary
+        dict[name] = (label, val)
+        message += f"\n    {label} ({name}):    {val}"
+    
+    # Set filepath, Use current dir as starting directory
+    start_dir = os.path.dirname(hou.hipFile.path())
+    
+    # User input for filename that must end with .json
+    while True:
+        filepath = hou.ui.selectFile(start_directory=start_dir,
+                                    default_value="test.json")
+        if filepath.endswith(".json"):
+            break;
+        elif filepath == "":
+            break;
+            
+        hou.ui.displayMessage("File should end with .json")
+    
+    if filepath != "":
+        filepath = hou.expandString(filepath)
+        
+        if hou.ui.displayConfirmation(f"Saving data to {filepath}\n{message}"):
+            # Saving out data
+            # print("saving")
+            with open(filepath, "w") as f:
+                json.dump(dict, f)
+        else:
+            hou.ui.displayMessage("Cancelling")
+    else:
+        hou.ui.displayMessage("Cancelling")
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
