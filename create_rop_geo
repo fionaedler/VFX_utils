@@ -1,0 +1,60 @@
+'''
+creates a geometry rop in the rop network using the selected node as input and sets all references accordingly.
+If the selected node is not a null node one is created first with the user being able to set the name of the cache.
+'''
+
+# get current node
+node = hou.selectedNodes()[0]
+# store output connections
+ocs = node.outputConnections()
+
+# Check if current node is null and set cache name
+cache_name = ""
+node_type = node.type().name()
+
+if node_type == "null":
+    cache_name = node.name()
+    null_node = node
+else:
+    # Create Null and set Cache name from user input
+    cache_name = hou.ui.readInput("Set Cache Name", buttons=("OK", "CANCEL"), )[1]
+    null_node = node.createOutputNode("null", f"CACHE_{cache_name}")
+    null_node.setColor(hou.Color([0.188, 0.529, 0.459]))
+    null_node.setUserData("nodeshape", "circle")
+    
+# Create File Node
+file_node = null_node.createOutputNode("file", f"READ_{null_node.name()}")
+
+# Create TimeShift
+ts_node = file_node.createOutputNode("timeshift")
+
+
+# Find RopNet and create RopNode
+parent = node.parent().parent()
+ropnet = [child for child in parent.children() if child.type().name()=="ropnet"][0]
+rop_node = ropnet.createNode("geometry", f"{null_node.name()}")
+
+# Set Parms
+rop_node.parm("trange").set(1)
+rop_node.parm("soppath").set(f"{rop_node.relativePathTo(null_node)}")
+rop_node.setColor(hou.Color([0.188, 0.529, 0.459]))
+
+# Create relative reference for filepath
+rel_path = f"{file_node.relativePathTo(rop_node)}/sopoutput"
+file_node.parm("file").set(f"`chs(\"{rel_path}\")`")
+
+# Create ref for frame range on TimeShift
+ts_node.parm("rangeclamp").set(3)
+ts_node.parm("frange1").deleteAllKeyframes()
+ts_node.parm("frange1").setExpression(f"ch(\"{ts_node.relativePathTo(rop_node)}/f1\")")
+ts_node.parm("frange2").deleteAllKeyframes()
+ts_node.parm("frange2").setExpression(f"ch(\"{ts_node.relativePathTo(rop_node)}/f2\")")
+
+# Reconnect original output connections to file node
+for oc in ocs:
+    idx = oc.inputIndex()
+    if oc.inputItem().name()==node.name():
+        oc.outputItem().setInput(idx, file_node, 0)
+
+
+
