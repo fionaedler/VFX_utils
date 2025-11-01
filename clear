@@ -1,0 +1,14 @@
+import nuke
+
+# Get current Node
+node = nuke.thisNode()
+
+node.knob('vs').setValue('')
+node.knob('file').setValue('')
+node.knob('result_path').setValue('')
+node.knob('result_file').setValue('')
+node.knob('tile_color').setValue(0x99000000)
+node.knob('error').setValue('black')
+# Make parameters for the Read node invisible
+node.knob('READ').setVisible(False)
+
