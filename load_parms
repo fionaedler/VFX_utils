@@ -1,0 +1,54 @@
+'''
+Loads a json file and sets the parameters of the selected node based on its contents
+'''
+
+import os 
+import json
+
+def load_parms():
+    # Get target node from selection
+    try:
+        tgtNode = hou.selectedNodes()[0]
+    except:
+        hou.ui.displayMessage("No node selected. Cancelling")
+        return
+    
+        
+    # Select filepath, Use current dir as starting directory or set manually
+    start_dir = os.path.dirname(hou.hipFile.path())
+    
+    # User input file from which to import parms 
+    filepath = hou.ui.selectFile(start_directory=start_dir)
+    filepath = hou.expandString(filepath)
+    
+    # Open the chosen file
+    with open(filepath) as f: s = f.read()
+    js = json.load(s)
+    
+    # Loop through parms
+    message = f"Loading Parameters for {tgtNode}:"
+    failed f"\n Loading failed for Parameters:"
+    
+    for key in js:
+        label = ks[key][0]
+        val = js[key][1]
+        
+        # Try to load parameters
+        try:
+            tgtNode.parm(key).set(val)
+            message += f"\n    {label}  ({key}):    {val}"
+            
+        #keep track of none-existent parms that couldn't be loaded
+        except:
+            try:
+                tgtNode.parm(key}.setExpression(val)
+            except:
+                failed += f"\n    {label}  ({key}):    {val}"  
+    
+    # Inform user which parms have loaded and which have failed
+    message += f"\n{failed}"
+    hou.ui.displayMessage(message)
+    
+
+load_parms()
+    
