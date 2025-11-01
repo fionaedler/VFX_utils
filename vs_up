@@ -1,0 +1,93 @@
+import os
+import nuke
+
+#Get current Node
+node=nuke.thisNode()
+
+###CUSTOM###
+# Set start folder and get list of subfolders
+start_folder = f"[PATH_TO_PROJ]/{shot}/[SUBFOLDER_STRUCTURE]"
+dir_list = os.listdir (start_folder)
+
+## FUNCTIONS
+#Get range of frames available in folder
+def get_range (folder):
+    framelist = [i[ -8:-4] for i in os.listdir (folder)]
+    return (framelist[0], framelist[-1])
+def getShotFromScriptName():
+    nScript = nuke.scriptName()
+    list = nScript.split("/")
+    shot = list [6]
+    return shot
+def get_vs_from_file():
+    cur_file = node.knob('file').getValue()
+    if cur_file != '':
+        vs = cur_file[-13:-9]
+        return vs
+    return None
+
+#Get user parms
+shot = node.knob ('shot').getValue()
+# If shot is empty extract it from nukescript name
+if shot == "":
+    shot = getShotFromScriptName()
+
+el = node.knob ('el').getValue()
+vs = get_vs_from_file()
+
+
+
+# Only do if there is a version available
+if vs is not None:
+    #Get index of current version in list of options
+    min_idx = [i for i, s in enumerate(dir_list) if vs in s][0]
+
+    # remove all items in list after the current version
+    dir_list = dir_list[min_idx:]
+    dir_list.pop(0)
+
+    # iterate over items in list, starting from the back
+    while len (dir_list) > 0:
+        subfolder = dir_list [0]
+        sublist = os.listdir (f" {start_folder}/{subfolder}")
+        if el in sublist:
+            files = os.listdir(f"{start_folder}/{subfolder}/{el}")
+            if files != []:
+                vs_pad = subfolder [-4:]
+                v = int(vs_pad[1:])
+
+                filefolder = f"{start_folder}/{subfolder}/{el}"
+                filename = f"{shot}_fx_{el}_{vs_pad}.####.exr"
+                filepath = f"{filefolder}/{filename}"
+                fileFound = 1
+                break;
+        dir_list.pop(0)
+        if len(dir_list) == 0:
+            fileFound = 0
+
+    # Get Read Node inside Group
+    with nuke.toNode(node.name()):
+        for r in nuke.allNodes('Read'):
+            if r.name() == 'Read1':
+                    readNode = r
+
+    if fileFound:
+        node.knob('title_color').setValue(0x00990000)
+    
+        # Get frame range in chosen folder
+        range = get_range(filefolder)
+
+        #Set parameters on Read Node
+        readNode.knob('file').setValue(filepath)
+        readNode.knob('first').setValue(int(range[0]))
+        readNode.knob('origfirst').setValue(int(range[0]))
+        readNode.knob('last').setValue(int(range[1]))
+        readNode.knob('origlast').setValue(int(range[1]))
+        readNode.knob('on_error').setValue('error')
+
+        node.knob('result_path').setValue(f"<font color='ForestGreen'>{filefolder}/</font")
+        node.knob('result_file').setValue(f"<font color='ForestGreen'>{filename}/</font")
+        node.knob('READ').setVisible(True)
+    else:
+        nuke.message(f'No higher versions found. Keeping {vs}')
+
